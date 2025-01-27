@@ -15,7 +15,7 @@ class ItemsProvider extends ChangeNotifier {
   bool _lostItemsLoaded = false;
   bool _foundItemsLoaded = false;
   bool _userItemsLoaded = false;
-  final bool _isLoading = false;
+  bool _isLoading = false;
 
   ItemsProvider();
 
@@ -125,8 +125,39 @@ class ItemsProvider extends ChangeNotifier {
         : state == ItemCategory.found
             ? _foundItems.add(newItem)
             : null;
+    _userItems.add(newItem);
 
-    await _apiService.addItemToFirestore(newItem);
+    _isLoading = true;
+    notifyListeners();
+    await _apiService.addItemToFirestore(newItem).then((_) {
+      _isLoading = false;
+    });
+    notifyListeners();
+  }
+
+  Future<void> updateItem(
+      {required Item item,
+      required String name,
+      required String description,
+      required String imagePath,
+      required String locationName,
+      required double lat,
+      required double lng,
+      required ItemCategory state,
+      double? reward}) async {
+    deleteItem(item);
+    addItem(
+        name: name,
+        description: description,
+        ownerName: item.ownerName,
+        ownerEmail: item.ownerEmail,
+        imagePath: imagePath,
+        locationName: locationName,
+        lat: lat,
+        lng: lng,
+        contactInfo: item.contactInfo,
+        state: state,
+        reward: reward ?? 0);
     notifyListeners();
   }
 
@@ -138,7 +169,7 @@ class ItemsProvider extends ChangeNotifier {
   Future<void> markItemFound(Item item) async {
     if (!_lostItemsLoaded) loadLostItems();
     _foundItems.add(item);
-    _lostItems.remove(item);
+    _lostItems.removeWhere((oldItem) => oldItem.id == item.id);
     item.state = ItemCategory.found.name;
     await _apiService.changeItemStateInFirestore(item, ItemCategory.lost.name);
     notifyListeners();
@@ -147,9 +178,20 @@ class ItemsProvider extends ChangeNotifier {
   Future<void> markItemRetrieved(Item item) async {
     if (!_userItemsLoaded) loadUserItems();
     _userItems.add(item);
-    _foundItems.remove(item);
+    _foundItems.removeWhere((oldItem) => oldItem.id == item.id);
     item.state = ItemCategory.retrieved.name;
     await _apiService.changeItemStateInFirestore(item, ItemCategory.found.name);
+    notifyListeners();
+  }
+
+  Future<void> deleteItem(Item item) async {
+    item.state == ItemCategory.lost.name
+        ? _lostItems.removeWhere((oldItem) => oldItem.id == item.id)
+        : item.state == ItemCategory.found.name
+            ? _foundItems.removeWhere((oldItem) => oldItem.id == item.id)
+            : null;
+    _userItems.removeWhere((oldItem) => oldItem.id == item.id);
+    await _apiService.removeItemFromFirestore(item);
     notifyListeners();
   }
 }

@@ -1,7 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lost_and_found_app/providers/items_provider.dart';
-import 'package:lost_and_found_app/service/api_service.dart';
 import 'package:lost_and_found_app/service/auth_service.dart';
 
 import '../data/DTO/user_DTO.dart';
@@ -94,6 +92,17 @@ class UserProvider with ChangeNotifier {
         phoneNumber: _phoneNumber,
         contactEmail: _displayEmail,
         contactPhone: _displayPhoneNumber);
+  }
+
+  void navigate(BuildContext context, String path) {
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
+
+    if (AuthService().currentUser != null) {
+      Navigator.of(context).pushNamed(path);
+      return;
+    }
+    Navigator.of(context).pushNamed("/login");
   }
 
   void logOutUser() {

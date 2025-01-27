@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:lost_and_found_app/presentation/widgets/add_item_pop.dart';
 import 'package:lost_and_found_app/providers/user_info_provider.dart';
+import 'package:lost_and_found_app/service/auth_service.dart';
 import 'package:lost_and_found_app/utils/connections.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -89,8 +91,22 @@ class _MyHomePageState extends State<MyHomePage> {
       body: [
         const LostItemsScreen(),
         const FoundItemsScreen(),
-        const MyItemsScreen(),
+        myItems(context, currentPageIndex),
       ][currentPageIndex],
     );
   }
+}
+
+Widget myItems(BuildContext context, int index) {
+  if (index == 2) {
+    if (AuthService().currentUser != null) {
+      ItemsProvider().loadUserItems();
+      return MyItemsScreen();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        UserProvider().navigate(context, "/login");
+      });
+    }
+  }
+  return const SizedBox.shrink();
 }

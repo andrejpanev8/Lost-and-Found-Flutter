@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lost_and_found_app/providers/user_info_provider.dart';
+import 'package:lost_and_found_app/service/auth_service.dart';
 import 'package:lost_and_found_app/utils/state_constants.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +17,7 @@ class FoundItemsScreen extends StatelessWidget {
     if (!provider.foundItemsLoaded) {
       provider.loadFoundItems();
     }
+
     return !provider.isLoading
         ? listItemsOfType(
             context: context,
@@ -22,20 +25,27 @@ class FoundItemsScreen extends StatelessWidget {
             emptyScreenText: "Currently there are no found items.",
             items: provider.foundItems,
             onAddPress: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(8.0)),
-                ),
-                builder: (context) => AddItemPopup(
-                  provider: provider,
-                  state: ItemCategory.found,
-                ),
-              );
+              _showAddItemPopup(context, provider);
             },
           )
-        : SizedBox();
+        : const SizedBox();
+  }
+
+  _showAddItemPopup(BuildContext context, ItemsProvider provider) {
+    if (AuthService().currentUser == null) {
+      UserProvider().navigate(context, "/login");
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
+        ),
+        builder: (context) => AddItemPopup(
+          provider: provider,
+          state: ItemCategory.found,
+        ),
+      );
+    }
   }
 }

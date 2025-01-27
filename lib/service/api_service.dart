@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../data/item_model.dart';
 
@@ -28,18 +29,33 @@ class ApiService {
       final CollectionReference itemsCollection =
           FirebaseFirestore.instance.collection(item.state);
 
-      String imageUrl = await uploadImageToSupabase(item.image);
-      int id = await _generateUniqueItemId(itemsCollection);
-
-      item.id = id;
-      item.image = imageUrl;
-      item.timestamp = DateTime.now();
-
-      await itemsCollection.doc(item.id.toString()).set(item.toJson());
+      await uploadImageToSupabase(item.image).then((value) async {
+        int id = await _generateUniqueItemId(itemsCollection);
+        item.id = id;
+        item.image = value;
+        item.timestamp = DateTime.now();
+      }).then((_) async {
+        await itemsCollection.doc(item.id.toString()).set(item.toJson());
+      }).onError<Exception>((e, _) {
+        throw e;
+      });
       print('Item saved successfully!');
     } catch (e) {
       print('Error saving item: $e');
       throw Exception('Failed to save item');
+    }
+  }
+
+  Future<void> removeItemFromFirestore(Item item) async {
+    try {
+      final CollectionReference collection =
+          FirebaseFirestore.instance.collection(item.state);
+      await collection.doc(item.id.toString()).delete();
+
+      print('Item state deleted successfully!');
+    } catch (e) {
+      print('Error deleting item: $e');
+      throw Exception('Failed to delete item');
     }
   }
 
@@ -63,6 +79,7 @@ class ApiService {
 }
 
 /////////////////////////////////////////////////////////////////////////////////
+///// Apply image compress before upload to supabase
 Future<String> uploadImageToSupabase(String imagePath) async {
   try {
     final supabase = Supabase.instance.client;
@@ -105,4 +122,16 @@ Future<int> _generateUniqueItemId(CollectionReference itemsCollection) async {
   }
 
   return newId;
+}
+
+// to be used for later
+Future<XFile?> compressImage(File file, String targetPath) async {
+  var result = await FlutterImageCompress.compressAndGetFile(
+    file.absolute.path,
+    targetPath,
+    quality: 88,
+    rotate: 180,
+  );
+
+  return result;
 }

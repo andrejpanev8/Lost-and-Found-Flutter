@@ -9,6 +9,7 @@ import 'package:lost_and_found_app/utils/state_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../data/item_model.dart';
 import '../../utils/color_constants.dart';
 import '../screens/map_screen.dart';
 
@@ -16,16 +17,37 @@ class AddItemPopup extends StatefulWidget {
   final ItemsProvider provider;
   final UserProvider userProvider = UserProvider();
   final ItemCategory state;
+  final Item? item;
 
-  AddItemPopup({super.key, required this.provider, required this.state});
+  AddItemPopup(
+      {super.key, required this.provider, required this.state, this.item});
 
   @override
   State<AddItemPopup> createState() => _AddItemPopupState();
 }
 
 class _AddItemPopupState extends State<AddItemPopup> {
-  LatLng? _selectedLatLng = LatLng(41.99812940, 21.42543550);
+  @override
+  void initState() {
+    super.initState();
+    if (widget.item != null) {
+      _nameController.text = widget.item!.name;
+      _descriptionController.text = widget.item!.description;
+      _locationController.text = widget.item!.location;
+      _rewardController.text = widget.item!.reward.toString();
+      _selectedLatLng = LatLng(widget.item!.latitude, widget.item!.longitude);
+      _selectedImage = null;
+      _selectedState = widget.item!.state == ItemCategory.lost.name
+          ? ItemCategory.lost
+          : widget.item!.state == ItemCategory.found.name
+              ? ItemCategory.found
+              : ItemCategory.retrieved;
+    }
+  }
 
+  ItemCategory? _selectedState;
+
+  LatLng? _selectedLatLng = LatLng(41.99812940, 21.42543550);
   XFile? _selectedImage;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -111,12 +133,48 @@ class _AddItemPopupState extends State<AddItemPopup> {
                 style: TextStyle(fontSize: 14.0, color: greyColor),
               ),
               const SizedBox(height: 16.0),
+              _stateDropdown(),
+              const SizedBox(height: 16.0),
               _saveButton(),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _stateDropdown() {
+    return widget.item != null
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Item State",
+                style: TextStyle(fontSize: 16.0),
+              ),
+              const SizedBox(height: 8.0),
+              DropdownButtonFormField<ItemCategory>(
+                value: _selectedState,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                items: ItemCategory.values
+                    .map(
+                      (category) => DropdownMenuItem<ItemCategory>(
+                        value: category,
+                        child: Text(category.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedState = value;
+                  });
+                },
+              ),
+            ],
+          )
+        : const SizedBox.shrink();
   }
 
   Future<void> _callMap() async {
@@ -166,28 +224,41 @@ class _AddItemPopupState extends State<AddItemPopup> {
         return;
       }
 
-      await widget.provider.addItem(
-        name: _nameController.text,
-        description: _descriptionController.text,
-        ownerName: widget.userProvider.fullName,
-        ownerEmail: widget.userProvider.email,
-        imagePath: _selectedImage?.path ?? '',
-        locationName: _locationController.text,
-        lat: _selectedLatLng!.latitude,
-        lng: _selectedLatLng!.longitude,
-        contactInfo: widget.userProvider.getContactInfo(),
-        state: widget.state,
-        reward: double.tryParse(_rewardController.text) ?? 0.0,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Item saved successfully!")),
-      );
+      if (widget.item == null) {
+        await widget.provider.addItem(
+          name: _nameController.text,
+          description: _descriptionController.text,
+          ownerName: widget.userProvider.fullName,
+          ownerEmail: widget.userProvider.email,
+          imagePath: _selectedImage?.path ?? '',
+          locationName: _locationController.text,
+          lat: _selectedLatLng!.latitude,
+          lng: _selectedLatLng!.longitude,
+          contactInfo: widget.userProvider.getContactInfo(),
+          reward: _rewardController.text.isNotEmpty
+              ? double.parse(_rewardController.text)
+              : 0,
+          state: widget.state,
+        );
+      } else {
+        await widget.provider.updateItem(
+            item: widget.item!,
+            name: _nameController.text,
+            description: _descriptionController.text,
+            imagePath: _selectedImage?.path ?? widget.item!.image,
+            locationName: _locationController.text,
+            lat: _selectedLatLng!.latitude,
+            lng: _selectedLatLng!.longitude,
+            reward: _rewardController.text.isNotEmpty
+                ? double.parse(_rewardController.text)
+                : null,
+            state: _selectedState!);
+      }
 
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save item: $e")),
+        SnackBar(content: Text("Error: ${e.toString()}")),
       );
     }
   }

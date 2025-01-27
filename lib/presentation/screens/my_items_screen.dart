@@ -6,7 +6,6 @@ import '../widgets/list_items.dart';
 
 class MyItemsScreen extends StatelessWidget {
   const MyItemsScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ItemsProvider>();

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lost_and_found_app/service/auth_service.dart';
+import 'package:lost_and_found_app/providers/user_info_provider.dart';
 
 import '../../utils/color_constants.dart';
 import '../../utils/text_styles.dart';
@@ -21,7 +21,7 @@ PreferredSizeWidget customAppBar({
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () {
-              _navigate(context);
+              UserProvider().navigate(context, "/profile");
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,
@@ -34,15 +34,4 @@ PreferredSizeWidget customAppBar({
         ),
     ],
   );
-}
-
-void _navigate(BuildContext context) {
-  Navigator.of(context)
-      .pushNamedAndRemoveUntil("/", (Route<dynamic> route) => false);
-
-  if (AuthService().currentUser != null) {
-    Navigator.of(context).pushNamed("/profile");
-    return;
-  }
-  Navigator.of(context).pushNamed("/login");
 }

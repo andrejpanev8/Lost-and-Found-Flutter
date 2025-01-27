@@ -38,7 +38,7 @@ Widget _buildItemsList(List<Item> items, bool? userItems) {
     itemBuilder: (context, index) {
       final item = items[index];
       return Card(
-        color: purpleSecondary,
+        color: yellowSecondary,
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 3,
         shape: RoundedRectangleBorder(

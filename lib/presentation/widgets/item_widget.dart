@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lost_and_found_app/presentation/widgets/add_item_pop.dart';
 import 'package:lost_and_found_app/service/map_service.dart';
 import 'package:lost_and_found_app/utils/state_constants.dart';
 import 'package:provider/provider.dart';
@@ -19,51 +20,126 @@ class ItemWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () => _showItemDetailsDialog(context, item, provider),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+            MainAxisAlignment.start, // Aligns image and details side-by-side
         children: [
-          _image(),
+          _image(provider),
           const SizedBox(width: 12),
-          _details(),
-        ],
-      ),
-    );
-  }
-
-  Widget _details() {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Item - ${item.name}",
-            style: StyledText().descriptionText(),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            item.description,
-            style: StyledText().descriptionText(fontSize: 14),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "Location: ${item.location}",
-            style: StyledText().descriptionText(fontSize: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _details(context, provider),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [_itemStateText(), _deleteButton(provider)],
+                )
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _image() {
-    return SizedBox(
-      width: 80,
-      child: Image.network(
-        item.image,
-        fit: BoxFit.cover,
+  Widget _details(BuildContext context, ItemsProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                "Item - ${item.name}",
+                style: StyledText().descriptionText(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.edit_square),
+              onPressed: () => _editItem(context, provider),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          item.description,
+          style: StyledText().descriptionText(fontSize: 14),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Location: ${item.location}",
+          style: StyledText().descriptionText(fontSize: 14),
+        ),
+      ],
+    );
+  }
+
+  Widget _image(ItemsProvider provider) {
+    return provider.isLoading
+        ? const CircularProgressIndicator()
+        : SizedBox(
+            width: 80,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                item.image,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+  }
+
+  Widget _itemStateText() {
+    return Align(
+      alignment: Alignment.bottomLeft,
+      child: Text(item.state,
+          style: StyledText().descriptionText(
+              color: item.state == ItemCategory.lost.name
+                  ? redDark
+                  : item.state == ItemCategory.found.name
+                      ? greenPrimary
+                      : null)),
+    );
+  }
+
+  Widget _deleteButton(ItemsProvider provider) {
+    return ElevatedButton(
+      onPressed: () {
+        provider.deleteItem(item);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: redTransparent,
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       ),
+      child: const Text(
+        "Delete",
+        style: TextStyle(fontSize: 14.0, color: whiteColor),
+      ),
+    );
+  }
+
+  void _editItem(BuildContext context, ItemsProvider provider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: AddItemPopup(
+            provider: provider,
+            state: item.state == ItemCategory.lost.name
+                ? ItemCategory.lost
+                : ItemCategory.found,
+            item: item,
+          ),
+        );
+      },
     );
   }
 }

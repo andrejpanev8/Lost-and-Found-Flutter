@@ -43,7 +43,7 @@ class Item {
       'contactInfo': contactInfo,
       'state': state,
       'reward': reward,
-      'timestamp': timestamp?.toIso8601String(), // Save as ISO 8601 format
+      'timestamp': timestamp?.toIso8601String(),
     };
   }
 
