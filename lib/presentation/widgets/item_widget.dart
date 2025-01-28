@@ -12,7 +12,8 @@ import '../../utils/text_styles.dart';
 
 class ItemWidget extends StatelessWidget {
   final Item item;
-  const ItemWidget({super.key, required this.item, bool? userItems});
+  bool? userItems;
+  ItemWidget({super.key, required this.item, this.userItems});
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +32,12 @@ class ItemWidget extends StatelessWidget {
               children: [
                 _details(context, provider),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [_itemStateText(), _deleteButton(provider)],
-                )
+                userItems == true
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [_itemStateText(), _deleteButton(provider)],
+                      )
+                    : SizedBox.shrink()
               ],
             ),
           ),
@@ -58,10 +61,12 @@ class ItemWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.edit_square),
-              onPressed: () => _editItem(context, provider),
-            ),
+            userItems == true
+                ? IconButton(
+                    icon: Icon(Icons.edit_square),
+                    onPressed: () => _editItem(context, provider),
+                  )
+                : SizedBox.shrink(),
           ],
         ),
         const SizedBox(height: 4),

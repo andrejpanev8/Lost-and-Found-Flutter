@@ -171,6 +171,7 @@ class ItemsProvider extends ChangeNotifier {
     _foundItems.add(item);
     _lostItems.removeWhere((oldItem) => oldItem.id == item.id);
     item.state = ItemCategory.found.name;
+    resetUserItems();
     await _apiService.changeItemStateInFirestore(item, ItemCategory.lost.name);
     notifyListeners();
   }
@@ -180,6 +181,7 @@ class ItemsProvider extends ChangeNotifier {
     _userItems.add(item);
     _foundItems.removeWhere((oldItem) => oldItem.id == item.id);
     item.state = ItemCategory.retrieved.name;
+    resetUserItems();
     await _apiService.changeItemStateInFirestore(item, ItemCategory.found.name);
     notifyListeners();
   }

@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lost_and_found_app/presentation/widgets/custom_app_bar.dart';
 import 'package:lost_and_found_app/utils/color_constants.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_info_provider.dart';
@@ -10,29 +14,11 @@ class UserProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var provider = context.watch<UserProvider>();
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.teal,
-          title: const Text(
-            'My Profile',
-            style: TextStyle(color: Colors.white),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                backgroundImage: NetworkImage(
-                  'https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png',
-                ),
-              ),
-            ),
-          ],
-        ),
+        appBar: customAppBar(
+            context: context,
+            appBarText: "My Profile",
+            provider: provider,
+            userProfileScreen: true),
         body: SingleChildScrollView(
             child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -45,10 +31,12 @@ class UserProfileScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // User Profile Image
-        CircleAvatar(
-          radius: 50,
-          backgroundImage: NetworkImage(
-            'https://uxwing.com/wp-content/themes/uxwing/download/peoples-avatars/no-profile-picture-icon.png',
+        GestureDetector(
+          onTap: () => _pickImage(userProvider),
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: whiteColor,
+            backgroundImage: _profilePic(userProvider),
           ),
         ),
         const SizedBox(height: 16),
@@ -127,7 +115,6 @@ class UserProfileScreen extends StatelessWidget {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // Trigger the pop-up to edit user info
                       _showEditProfileDialog(context, userProvider);
                     },
                     style: ElevatedButton.styleFrom(
@@ -145,6 +132,20 @@ class UserProfileScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  ImageProvider<Object> _profilePic(UserProvider userProvider) {
+    return _isNetworkImage(userProvider.profilePicture)
+        ? NetworkImage(userProvider.profilePicture)
+        : FileImage(File(userProvider.profilePicture)) as ImageProvider;
+  }
+
+  Future<void> _pickImage(UserProvider provider) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      provider.updateProfilePicture(image.path);
+    }
   }
 }
 
@@ -234,4 +235,11 @@ void _showEditProfileDialog(BuildContext context, UserProvider userProvider) {
       );
     },
   );
+}
+
+bool _isNetworkImage(String path) {
+  final uri = Uri.tryParse(path);
+  return uri != null &&
+      uri.hasScheme &&
+      (uri.scheme == 'http' || uri.scheme == 'https');
 }

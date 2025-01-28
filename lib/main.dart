@@ -70,8 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var provider = context.watch<UserProvider>();
     return Scaffold(
-      appBar: customAppBar(context: context),
+      appBar: customAppBar(context: context, provider: provider),
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (index) {
           setState(() {

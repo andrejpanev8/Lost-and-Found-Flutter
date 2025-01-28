@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lost_and_found_app/providers/items_provider.dart';
+import 'package:lost_and_found_app/service/api_service.dart';
 import 'package:lost_and_found_app/service/auth_service.dart';
+import 'package:lost_and_found_app/utils/image_constants.dart';
 
 import '../data/DTO/user_DTO.dart';
 
@@ -9,6 +11,7 @@ class UserProvider with ChangeNotifier {
   String _fullName = "Failed to fetch name";
   String _email = "Failed to fetch email";
   String _phoneNumber = "";
+  String _profilePicture = defaultProfileImage;
   bool _displayEmail = true;
   bool _displayPhoneNumber = false;
 
@@ -18,6 +21,7 @@ class UserProvider with ChangeNotifier {
   String get fullName => _fullName;
   String get email => _email;
   String get phoneNumber => _phoneNumber;
+  String get profilePicture => _profilePicture;
   bool get displayEmail => _displayEmail;
   bool get displayPhoneNumber => _displayPhoneNumber;
   bool get displayEmailTransient => _displayEmailTransient;
@@ -32,8 +36,9 @@ class UserProvider with ChangeNotifier {
       _fullName = user.fullName;
       _email = user.email;
       _phoneNumber = user.phoneNumber;
+      _profilePicture = user.profilePicture;
       _displayEmail = _displayEmailTransient = user.contactEmail;
-      _displayPhoneNumber = _displayEmailTransient = user.contactPhone;
+      _displayPhoneNumber = _displayPhoneNumberTransient = user.contactPhone;
       notifyListeners();
     } catch (e) {
       print("Failed to fetch user info: $e");
@@ -53,6 +58,15 @@ class UserProvider with ChangeNotifier {
   void updatePhoneNumber(String newPhoneNumber) {
     _phoneNumber = newPhoneNumber;
     notifyListeners();
+  }
+
+  void updateProfilePicture(String profilePicturePath) async {
+    _profilePicture = profilePicturePath;
+    notifyListeners();
+    String urlToImage =
+        await ApiService().uploadImageToSupabase(profilePicturePath);
+    _profilePicture = urlToImage;
+    saveUserInfo();
   }
 
   void toggleDisplayEmail(bool value) {
@@ -76,7 +90,7 @@ class UserProvider with ChangeNotifier {
     String contact = "";
 
     if (_displayEmail && _displayPhoneNumber) {
-      contact = _email + "\n" + _phoneNumber;
+      contact = "$_email\n$_phoneNumber";
     } else if (_displayEmail) {
       contact = _email;
     } else if (_displayPhoneNumber) {
@@ -91,7 +105,8 @@ class UserProvider with ChangeNotifier {
         fullName: _fullName,
         phoneNumber: _phoneNumber,
         contactEmail: _displayEmail,
-        contactPhone: _displayPhoneNumber);
+        contactPhone: _displayPhoneNumber,
+        profilePictureUrl: _profilePicture);
   }
 
   void navigate(BuildContext context, String path) {
@@ -111,8 +126,11 @@ class UserProvider with ChangeNotifier {
     _fullName = "Failed to fetch name";
     _email = "Failed to fetch email";
     _phoneNumber = "";
+    _profilePicture = "";
     _displayEmail = true;
     _displayPhoneNumber = false;
+    _displayEmailTransient = true;
+    _displayPhoneNumberTransient = false;
     notifyListeners();
   }
 }

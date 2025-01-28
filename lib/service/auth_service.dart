@@ -7,7 +7,6 @@ import 'package:lost_and_found_app/providers/user_info_provider.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Create a new user with email and password
   Future<User?> createUserWithEmailAndPassword(
       String email, String password) async {
     try {
@@ -18,7 +17,6 @@ class AuthService {
       return cred.user;
     } on FirebaseAuthException catch (e) {
       log("Error during registration: ${e.message}");
-      // Handle specific error codes (e.g., email already in use, weak password)
       if (e.code == 'email-already-in-use') {
         log("The email address is already in use.");
       } else if (e.code == 'weak-password') {
@@ -30,7 +28,6 @@ class AuthService {
     return null;
   }
 
-  /// Log in a user with email and password
   Future<User?> loginUserWithEmailAndPassword(
       String email, String password, UserProvider userProvider) async {
     try {
@@ -42,7 +39,6 @@ class AuthService {
       return cred.user;
     } on FirebaseAuthException catch (e) {
       log("Error during login: ${e.message}");
-      // Handle specific error codes (e.g., invalid email, user not found)
       if (e.code == 'user-not-found') {
         log("No user found with this email.");
       } else if (e.code == 'wrong-password') {
@@ -54,7 +50,6 @@ class AuthService {
     return null;
   }
 
-  /// Sign out the current user
   Future<void> logOut() async {
     try {
       await _auth.signOut();
@@ -63,29 +58,31 @@ class AuthService {
     }
   }
 
-  /// Get the currently logged-in user
   User? get currentUser => _auth.currentUser;
 
   Future<void> updateUserDisplay({required String fullName}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await user.updateDisplayName(fullName);
-      await user.reload(); // Refresh the user's data
+      await user.reload();
     }
   }
 
   Future<void> updateUserProfile(
       {String? fullName,
       String? phoneNumber,
+      String? profilePictureUrl,
       bool? contactEmail = true,
       bool? contactPhone = false}) async {
     final user = FirebaseAuth.instance.currentUser;
+
     await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
       'fullName': fullName,
       'email': user.email,
       'phoneNumber': phoneNumber,
       'contactEmail': contactEmail,
       'contactPhone': contactPhone,
+      'profilePicture': profilePictureUrl
     });
   }
 

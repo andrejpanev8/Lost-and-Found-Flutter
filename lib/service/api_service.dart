@@ -76,25 +76,25 @@ class ApiService {
       throw Exception('Failed to change item state');
     }
   }
-}
 
-/////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////
 ///// Apply image compress before upload to supabase
-Future<String> uploadImageToSupabase(String imagePath) async {
-  try {
-    final supabase = Supabase.instance.client;
-    final file = File(imagePath);
+  Future<String> uploadImageToSupabase(String imagePath) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final file = File(imagePath);
 
-    final randomName = _generateRandomName();
-    final fileName = '$randomName.jpg';
+      final randomName = _generateRandomName();
+      final fileName = '$randomName.jpg';
 
-    await supabase.storage.from('images').upload(fileName, file);
+      await supabase.storage.from('images').upload(fileName, file);
 
-    final imageUrl = supabase.storage.from('images').getPublicUrl(fileName);
-    return imageUrl;
-  } catch (e) {
-    print('Error uploading image: $e');
-    throw Exception('Failed to upload image');
+      final imageUrl = supabase.storage.from('images').getPublicUrl(fileName);
+      return imageUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      throw Exception('Failed to upload image');
+    }
   }
 }
 
